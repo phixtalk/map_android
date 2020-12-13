@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Map</string>
     <string name="btn_text_start">Start</string>
-    <string name="google_map_api_key">AIzaSyCbBIduMxFByIV_Oz2Ku7kl1u1sTRXkKMs</string>
+    <string name="google_map_api_key"></string>
     <string name="inadequate_location_settings">Location settings are inadequate, and cannot be fixed here. Fix in Settings</string>
     <string name="permissions_needed">Please grant permissions to use map features</string>
 
