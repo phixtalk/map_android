@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Map</string>
+    <string name="btn_text_start">Start</string>
+    <string name="google_map_api_key">AIzaSyCbBIduMxFByIV_Oz2Ku7kl1u1sTRXkKMs</string>
+    <string name="inadequate_location_settings">Location settings are inadequate, and cannot be fixed here. Fix in Settings</string>
+    <string name="permissions_needed">Please grant permissions to use map features</string>
+
+    <string name="permission_required">Permissions Required</string>
+    <string name="location_all_the_time_message">Grant all permissions and Allow Location All the time to continue</string>
+
+    <string name="enable_gps">Enable GPS Location</string>
+    <string name="enable_gps_message">GPS Location needs to be enabled to continue</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="call_permission_granted">You can initiate calls now.</string>
+    <string name="call_permission_failed">You need call permission to initiate calls.</string>
+    <string name="route_a">Route A</string>
+    <string name="route_b">Route B</string>
+
+</resources>
