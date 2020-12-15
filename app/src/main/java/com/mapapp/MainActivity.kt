@@ -44,6 +44,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.kodein
 import org.kodein.di.generic.instance
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 @ExperimentalCoroutinesApi
@@ -152,7 +155,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, KodeinAware {
                     setLatLngFromMarkerData()
                     if (viewModel.mLatLng.size == 2) {
                         removeAllPolylineData()
-                        drawPolylineRoute()
+                        drawPolylineRoute(viewModel.mLatLng)
                     }
                 }
             })
@@ -212,13 +215,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, KodeinAware {
         viewModel.mMapMarkers.add(marker)
         viewModel.mLatLng.add(lng)
 
-        if (viewModel.mLatLng.size == 2) drawPolylineRoute()
+        if (viewModel.mLatLng.size == 2) drawPolylineRoute(viewModel.mLatLng)
     }
 
-    private fun drawPolylineRoute() {
+    private fun drawPolylineRoute(latLngList: ArrayList<LatLng>) {
         val options = PolylineOptions().width(10f).color(Color.BLUE)
-        for (z in 0 until viewModel.mLatLng.size) {
-            val point: LatLng = viewModel.mLatLng[z]
+        for (z in 0 until latLngList.size) {
+            val point: LatLng = latLngList[z]
             options.add(point)
         }
         val polyline: Polyline = mMap.addPolyline(options)
@@ -350,21 +353,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, KodeinAware {
 
     private fun addCarMarker(location: LatLng): Marker {
         removeCarMarkers()
-        val carLocation  = bitmapDescriptorFromVector( R.drawable.drive_car)
+        val carLocation  = bitmapDescriptorFromVector(R.drawable.car)
 
         val marker =  mMap.addMarker(
                 MarkerOptions()
                         .icon(carLocation)
                         .position(location)
+                        .flat(true)
         )
 
         viewModel.mCarMarkers.add(marker)
         return marker
     }
 
-    private fun animateCar(map: GoogleMap, marker: Marker, toPosition: LatLng,
+    private fun animateCar(map: GoogleMap, marker: Marker, destination: LatLng,
                            hideMarker: Boolean) {
-        val handler = Handler()
         val start = SystemClock.uptimeMillis()
         val proj = map.projection
         val startPoint: Point = proj.toScreenLocation(marker.position)
@@ -372,20 +375,46 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, KodeinAware {
         val duration: Long = 10000
         val interpolator: Interpolator = LinearInterpolator()
 
-        handler.post(object : Runnable {
+        val handle = Handler(Looper.getMainLooper())
+        handle.post(object : Runnable{
             override fun run() {
                 val elapsed = SystemClock.uptimeMillis() - start
                 val t: Float = interpolator.getInterpolation(elapsed.toFloat() / duration)
-                val lng = t * toPosition.longitude + (1 - t) * startLatLng.longitude
-                val lat = t * toPosition.latitude + (1 - t) * startLatLng.latitude
-                marker.position = LatLng(lat, lng)
-                if (t < 1.0) {
-                    // Post again 16ms later.
-                    handler.postDelayed(this, 30)
-                } else {
-                    marker.isVisible = !hideMarker
-                }
+                val lng = t * destination.longitude + (1 - t) * startLatLng.longitude
+                val lat = t * destination.latitude + (1 - t) * startLatLng.latitude
+
+                val newPosition = LatLng(lat, lng)
+                marker.position = newPosition
+
+                //calculate and set bearing
+                val bearing = bearingBetweenLocations(newPosition, destination)
+                marker.rotation = bearing.toFloat()
+
+                //redraw polyline
+                removeAllPolylineData()
+                val newPosList = arrayListOf(newPosition,destination)
+                drawPolylineRoute(newPosList)
+
+                if (t < 1.0) handle.postDelayed(this, 30) //marker is not yet at destination
+                else marker.isVisible = !hideMarker //marker is at destination, decide whether to keep it visible or hide it
             }
         })
+    }
+
+    private fun bearingBetweenLocations(latLng1: LatLng, latLng2: LatLng): Double {
+        val PI = 3.14159
+        val lat1: Double = latLng1.latitude * PI / 180
+        val long1: Double = latLng1.longitude * PI / 180
+        val lat2: Double = latLng2.latitude * PI / 180
+        val long2: Double = latLng2.longitude * PI / 180
+        val dLon = long2 - long1
+        val y = sin(dLon) * cos(lat2)
+        val x =
+                cos(lat1) * sin(lat2) - (sin(lat1)
+                        * cos(lat2) * cos(dLon))
+        var brng = atan2(y, x)
+        brng = Math.toDegrees(brng)
+        brng = (brng + 360) % 360
+        return brng
     }
 }
